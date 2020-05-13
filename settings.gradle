@@ -1,0 +1,33 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        jcenter()
+    }
+    dependencies {
+        classpath group: 'org.kordamp.gradle',                  name: 'settings-gradle-plugin',         version: kordampPluginVersion
+        classpath group: 'org.kordamp.gradle',                  name: 'groovy-project-gradle-plugin',   version: kordampPluginVersion
+        classpath group: 'org.kordamp.gradle',                  name: 'checkstyle-gradle-plugin',       version: kordampPluginVersion
+        classpath group: 'org.kordamp.gradle',                  name: 'codenarc-gradle-plugin',         version: kordampPluginVersion
+
+        classpath group: 'com.github.jengelman.gradle.plugins', name: 'shadow',                         version: '5.2.0'
+        classpath group: 'jp.classmethod.aws',                  name: 'gradle-aws-plugin',              version: '0.41'
+
+        classpath group: 'org.apache.httpcomponents',           name: 'httpclient',                     version: '4.5.11'
+        classpath group: 'com.google.guava',                    name: 'guava',                          version: '29.0-jre'
+    }
+}
+
+apply plugin: 'org.kordamp.gradle.settings'
+
+projects {
+    directories = ['apis']
+
+    plugins {
+        dir('apis') {
+            id 'com.github.johnrengelman.shadow'
+            id 'jp.classmethod.aws.lambda'
+        }
+    }
+}
+
+rootProject.name = 'kordamp-projects-dsl'

@@ -1,0 +1,80 @@
+import com.google.common.base.CaseFormat
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath group: 'com.google.guava', name: 'guava', version: '29.0-jre'
+    }
+}
+
+plugins {
+    id 'org.kordamp.gradle.groovy-project'
+    id 'org.kordamp.gradle.checkstyle'
+    id 'org.kordamp.gradle.codenarc'
+    id 'org.sonarqube'
+}
+
+config {
+    release = (rootProject.findProperty('release') ?: false).toBoolean()
+
+    info {
+        name = 'Kordamp Projects DSL'
+        vendor = 'Agorapulse'
+        description = 'Kordamp Projects DSL Test Project'
+
+        links {
+            website = "https://github.com/" + slug
+            issueTracker = "https://github.com/" + slug + "/issues"
+            scm = "https://github.com/" + slug + ".git"
+        }
+
+        people {
+            person {
+                id = 'musketyr'
+                name = 'Vladimir Orany'
+                roles = ['developer']
+            }
+        }
+    }
+
+    licensing {
+        enabled = false
+    }
+}
+
+
+subprojects { subproject ->
+    apply plugin: 'groovy'
+    apply plugin: 'java-library'
+}
+
+projects {
+    subprojects {
+        dir('apis') { Project sub ->
+            String upperCamelName = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, sub.name)
+            shadowJar {
+                mergeServiceFiles()
+                mergeGroovyExtensionModules()
+                transform(com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer)
+                append 'application.yml'
+            }
+
+            aws {
+                region = 'eu-west-1'
+                profileName = 'beta'
+            }
+
+            task deploy(type: jp.classmethod.aws.gradle.lambda.AWSLambdaMigrateFunctionTask, dependsOn: shadowJar) {
+                functionName = upperCamelName
+                handler = 'agorapulse.notification.services.StreamLambdaHandler'
+                role = "arn:aws:iam::$aws.accountId:role/${upperCamelName}Lambda"
+                runtime = com.amazonaws.services.lambda.model.Runtime.Java8
+                zipFile = shadowJar.archivePath
+                memorySize = 1024
+                timeout = 120
+            }
+        }
+    }
+}
